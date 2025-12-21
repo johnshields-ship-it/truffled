@@ -1,0 +1,39 @@
+{
+	"name": "truffled",
+	"version": "1.0.0",
+	"description": "Ultraviolet instance",
+	"type": "module",
+	"main": "index.js",
+	"packageManager": "pnpm@9.12.2",
+	"engines": {
+		"npm": ">=7.0.0",
+		"node": ">=16.0.0"
+	},
+	"scripts": {
+		"start": "node --watch index.js",
+		"format": "prettier --config .prettierrc.js --write .",
+		"lint": "eslint ./src/",
+		"lint:fix": "eslint ./src/ --fix"
+	},
+	"keywords": [
+		"proxy"
+	],
+	"author": "",
+	"license": "GPL-3.0-or-later",
+	"dependencies": {
+		"express": "^4.21.2",
+		"dotenv": "^17.2.3",
+		"cors": "^2.8.5",
+		"@titaniumnetwork-dev/ultraviolet": "^3.2.10",
+		"@mercuryworkshop/bare-mux": "^2.1.7",
+		"@mercuryworkshop/libcurl-transport": "^1.5.2",
+		"@mercuryworkshop/scramjet": "https://github.com/MercuryWorkshop/scramjet/releases/download/latest/mercuryworkshop-scramjet-1.0.2-dev.tgz",
+		"@mercuryworkshop/wisp-js": "^0.4.1",
+		"bufferutil": "^4.1.0",
+		"ws": "^8.18.3"
+	},
+	"devDependencies": {
+		"eslint": "^9.13.0",
+		"prettier": "^3.3.3"
+	}
+}

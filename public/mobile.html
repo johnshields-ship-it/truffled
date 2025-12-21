@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Truffled - Health</title>
+    <meta name="title" content="Truffled - Interactive Learning Resources">
+    <meta name="description" content="Truffled is an educational platform offering interactive activities, brain-training challenges, and creative learning tools for students.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://truffled.lol/">
+    <meta property="og:title" content="Truffled - Interactive Learning Resources">
+    <meta property="og:description" content="Explore engaging educational content, problem-solving challenges, and interactive tools designed to support learning.">
+    <meta property="og:image" content="https://truffled.lol/png/logo.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://truffled.lol/">
+    <meta name="twitter:title" content="Truffled - Interactive Learning Resources">
+    <meta name="twitter:description" content="A safe and clean educational site offering interactive activities and learning-focused tools.">
+    <meta name="twitter:image" content="https://truffled.lol/png/logo.png">
+    <link rel="canonical" href="https://truffled.lol/">
+    <link rel="stylesheet" href="css/mobile.css">
+</head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PXHK7Q7G3Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-PXHK7Q7G3Z');
+</script>
+<body>
+    <iframe id="game" allow="autoplay; fullscreen; gamepad"></iframe>
+    <div class="settings-icon" onclick="togglePanel()">⚙</div>
+    <div class="panel" id="panel">
+        <div class="panel-head">
+             <span class="close-btn" onclick="togglePanel()">‎ </span>
+        </div>
+        <div class="section">
+            <div class="section-title">scale and style</div>
+            <div class="slider-wrap">
+                <div class="slider-label">
+                    <span>size</span>
+                    <span id="sizeVal">100%</span>
+                </div>
+                <input type="range" id="sizeSlider" min="60" max="140" value="100" oninput="updateSize(this.value)">
+            </div>
+            <div class="slider-wrap">
+                <div class="slider-label">
+                    <span>opacity</span>
+                    <span id="opacityVal">65%</span>
+                </div>
+                <input type="range" id="opacitySlider" min="30" max="95" value="65" oninput="updateOpacity(this.value)">
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-title">joystick controls</div>
+            <div class="toggle-wrap">
+                <div class="toggle-btn" id="wasdBtn" onclick="setJoystickMode('wasd')">WASD</div>
+                <div class="toggle-btn" id="arrowBtn" onclick="setJoystickMode('arrow')">Arrow Keys</div>
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-title">camera sensitivity</div>
+            <div class="slider-wrap">
+                <div class="slider-label">
+                    <span>sensitivity</span>
+                    <span id="sensVal">4.0</span>
+                </div>
+                <input type="range" id="sensSlider" min="1" max="10" step="0.5" value="4" oninput="updateSensitivity(this.value)">
+            </div>
+        </div>
+        <div class="section">
+            <div class="section-title">positioning</div>
+            <button class="btn-action primary" onclick="toggleDragMode()" id="dragBtn">move</button>
+            <div class="toggle-wrap">
+                <div class="toggle-btn" onclick="resetPositions()">reset</div>
+                <div class="toggle-btn" onclick="savePositions()">save</div>
+            </div>
+        </div>
+        <div class="section">
+            <input type="text" id="customLabel" placeholder="name of button:">
+            <select id="customKey">
+                <option value="Space">space</option>
+                <option value="Enter">enter</option>
+                <option value="Shift">shift</option>
+                <option value="Control">ctrl</option>
+                <option value="Tab">tab</option>
+                <option value="e">e</option>
+                <option value="r">r</option>
+                <option value="f">f</option>
+                <option value="q">q</option>
+                <option value="c">c</option>
+                <option value="v">v</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+            </select>
+            <button class="btn-action primary" onclick="addCustom()">add button</button>
+            <div class="custom-list" id="customList"></div>
+        </div>
+        <div class="section">
+            <div class="section-title">config</div>
+            <button class="btn-action" onclick="saveAll()">save config</button>
+            <button class="btn-action" onclick="loadAll()">load config</button>
+            <button class="btn-action danger" onclick="resetAll()">reset settings</button>
+        </div>
+    </div>
+    <div class="controls" id="controls">
+        <div class="btn esc" data-key="Escape">ESC</div>
+        <div class="btn joy"><div class="joy-stick"></div></div>
+        <div class="btn camera"><div class="camera-stick"></div></div>
+        <div class="btn a" data-key="z">A</div>
+        <div class="btn b" data-key="x">B</div>
+        <div class="btn lclick" data-click="left">L</div>
+        <div class="btn rclick" data-click="right">R</div>
+    </div>
+    <script>
+        const url = new URLSearchParams(location.search).get('url');
+        const gameFrame = document.getElementById('game');
+        if (url) gameFrame.src = url;
+        let customButtons = [];
+        let dragMode = false;
+        let dragElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        let baseSize = 1;
+        let baseOpacity = 0.65;
+        let activeInputId = null;
+        let joystickMode = 'wasd'; // Default to WASD
+        let cameraSensitivity = 4.0;
+        
+        function togglePanel() {
+            document.getElementById('panel').classList.toggle('open');
+        }
+
+        function applyStyles() {
+            document.documentElement.style.setProperty('--base-opacity', baseOpacity);
+        }
+
+        function updateSize(value) {
+            baseSize = value / 100;
+            document.getElementById('sizeVal').textContent = value + '%';
+            applyScale();
+            saveAll();
+        }
+
+        function updateOpacity(value) {
+            baseOpacity = value / 100;
+            document.getElementById('opacityVal').textContent = value + '%';
+            applyStyles();
+            saveAll();
+        }
+
+        function setJoystickMode(mode) {
+            joystickMode = mode;
+            document.getElementById('wasdBtn').classList.toggle('active', mode === 'wasd');
+            document.getElementById('arrowBtn').classList.toggle('active', mode === 'arrow');
+            saveAll();
+        }
+
+        function updateSensitivity(value) {
+            cameraSensitivity = parseFloat(value);
+            document.getElementById('sensVal').textContent = value;
+            saveAll();
+        }
+
+        function applyScale() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                if (!btn.dataset.baseWidth) {
+                    btn.dataset.baseWidth = parseFloat(getComputedStyle(btn).width);
+                    btn.dataset.baseHeight = parseFloat(getComputedStyle(btn).height);
+                }
+                
+                const baseW = parseFloat(btn.dataset.baseWidth);
+                const baseH = parseFloat(btn.dataset.baseHeight);
+                btn.style.width = (baseW * baseSize) + 'px';
+                btn.style.height = (baseH * baseSize) + 'px';
+                const baseFontSize = parseFloat(btn.dataset.baseFontSize || getComputedStyle(btn).fontSize);
+                btn.style.fontSize = (baseFontSize * baseSize) + 'px';
+                btn.dataset.baseFontSize = baseFontSize;
+                if (btn.classList.contains('joy') || btn.classList.contains('camera')) {
+                    const stick = btn.querySelector('.joy-stick, .camera-stick');
+                    if (stick) {
+                        const stickBase = parseFloat(stick.dataset.baseWidth || 48);
+                        stick.style.width = (stickBase * baseSize) + 'px';
+                        stick.style.height = (stickBase * baseSize) + 'px';
+                        stick.dataset.baseWidth = stickBase;
+                    }
+                }
+            });
+        }
+        function toggleDragMode() {
+            dragMode = !dragMode;
+            const btn = document.getElementById('dragBtn');
+            
+            document.querySelectorAll('.btn').forEach(b => b.classList.toggle('drag-mode', dragMode));
+
+            if (dragMode) {
+                btn.textContent = 'stop moving';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = 'move';
+                btn.classList.remove('active');
+                savePositions();
+            }
+        }
+
+        function savePositions() {
+            const positions = {};
+            document.querySelectorAll('.btn').forEach(btn => {
+                const id = btn.dataset.customId || btn.className.split(' ').find(c => ['joy', 'camera', 'a', 'b', 'lclick', 'rclick', 'esc'].includes(c));
+                if (id) {
+                    positions[id] = {
+                        top: btn.style.top,
+                        left: btn.style.left,
+                        right: btn.style.right,
+                        bottom: btn.style.bottom,
+                    };
+                }
+            });
+            localStorage.setItem('btnPositions', JSON.stringify(positions));
+        }
+
+        function resetPositions() {
+            localStorage.removeItem('btnPositions');
+            location.reload();
+        }
+
+        function loadPositions() {
+            const saved = localStorage.getItem('btnPositions');
+            if (saved) {
+                const positions = JSON.parse(saved);
+                Object.keys(positions).forEach(id => {
+                    const btn = document.querySelector(`[data-custom-id="${id}"]`) || 
+                                    document.querySelector(`.${id}`);
+                    if (btn) {
+                        const pos = positions[id];
+                        btn.style.top = pos.top;
+                        btn.style.left = pos.left;
+                        btn.style.right = pos.right;
+                        btn.style.bottom = pos.bottom;
+                    }
+                });
+            }
+        }
+
+        function getCoords(e) {
+            if (e.touches && e.touches.length) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function startDrag(e) {
+            if (!dragMode) return;
+            const btn = e.target.closest('.btn');
+            if (!btn || e.target.closest('.joy-stick, .camera-stick')) return;
+            
+            dragElement = btn;
+            const rect = btn.getBoundingClientRect();
+            const coords = getCoords(e);
+            dragOffset.x = coords.x - rect.left;
+            dragOffset.y = coords.y - rect.top;
+            btn.style.left = rect.left + 'px';
+            btn.style.top = rect.top + 'px';
+            btn.style.right = 'auto';
+            btn.style.bottom = 'auto';
+            
+            e.preventDefault(); 
+        }
+        function moveDrag(e) {
+            if (!dragElement) return;
+            
+            const coords = getCoords(e);
+            dragElement.style.left = (coords.x - dragOffset.x) + 'px';
+            dragElement.style.top = (coords.y - dragOffset.y) + 'px';
+
+            e.preventDefault();
+        }
+        function endDrag() {
+            dragElement = null;
+        }
+        document.addEventListener('mousedown', startDrag);
+        document.addEventListener('touchstart', startDrag, { passive: false });
+        document.addEventListener('mousemove', moveDrag);
+        document.addEventListener('touchmove', moveDrag, { passive: false });
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+        document.addEventListener('touchcancel', endDrag);
+        function createButtonElement(buttonData) {
+            const btn = document.createElement('div');
+            btn.className = 'btn custom-btn';
+            btn.textContent = buttonData.label;
+            btn.dataset.key = buttonData.key;
+            btn.dataset.customId = buttonData.id;
+            btn.style.width = (60 * baseSize) + 'px';
+            btn.style.height = (60 * baseSize) + 'px';
+            btn.style.fontSize = (13 * baseSize) + 'px'; 
+            btn.style.top = '100px'; 
+            btn.style.left = '50%';
+            
+            document.getElementById('controls').appendChild(btn);
+            attachButtonEvents(btn);
+            return btn;
+        }
+
+        function addCustom() {
+            const label = document.getElementById('customLabel').value.trim();
+            const key = document.getElementById('customKey').value;
+            
+            if (!label) return;
+
+            const id = Date.now();
+            const buttonData = { id, label, key };
+            customButtons.push(buttonData);
+            
+            createButtonElement(buttonData);
+            updateCustomList();
+            saveAll(); 
+            
+            document.getElementById('customLabel').value = '';
+        }
+        function deleteCustom(id) {
+            customButtons = customButtons.filter(b => b.id !== id);
+            const btn = document.querySelector(`[data-custom-id="${id}"]`);
+            if (btn) btn.remove();
+            updateCustomList();
+            saveAll();
+        }
+        function updateCustomList() {
+            const list = document.getElementById('customList');
+            list.innerHTML = '';
+            
+            customButtons.forEach(btn => {
+                const item = document.createElement('div');
+                item.className = 'custom-item';
+                item.innerHTML = `
+                    <div class="custom-info">
+                        <strong>${btn.label}</strong> (${btn.key})
+                    </div>
+                    <button class="del-btn" onclick="deleteCustom(${btn.id})">×</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+        function saveAll() {
+            savePositions();
+            const config = {
+                size: baseSize,
+                opacity: baseOpacity,
+                customButtons,
+                joystickMode,
+                cameraSensitivity
+            };
+            localStorage.setItem('controllerConfig', JSON.stringify(config));
+        }
+
+        function loadAll() {
+            const saved = localStorage.getItem('controllerConfig');
+            document.querySelectorAll('.custom-btn').forEach(el => el.remove());
+
+            if (saved) {
+                const config = JSON.parse(saved);
+                baseSize = config.size || 1;
+                baseOpacity = config.opacity || 0.65;
+                joystickMode = config.joystickMode || 'wasd';
+                cameraSensitivity = config.cameraSensitivity || 4.0;
+                
+                document.getElementById('sizeSlider').value = Math.round(baseSize * 100);
+                document.getElementById('opacitySlider').value = Math.round(baseOpacity * 100);
+                document.getElementById('sizeVal').textContent = Math.round(baseSize * 100) + '%';
+                document.getElementById('opacityVal').textContent = Math.round(baseOpacity * 100) + '%';
+                document.getElementById('sensSlider').value = cameraSensitivity;
+                document.getElementById('sensVal').textContent = cameraSensitivity;
+                
+                setJoystickMode(joystickMode);
+                
+                customButtons = config.customButtons || [];
+                customButtons.forEach(createButtonElement);
+                
+                updateCustomList();
+                loadPositions();
+                applyScale(); 
+                applyStyles(); 
+            } else {
+                setJoystickMode('wasd');
+            }
+        }
+
+        function resetAll() {
+            localStorage.clear();
+            location.reload();
+        }
+        const active = new Set(); 
+        const clickActive = new Set();
+
+        function key(type, k) {
+            const target = gameFrame.contentWindow || window;
+            const targetDoc = gameFrame.contentWindow ? gameFrame.contentWindow.document : document;
+
+            // Normalize the key
+            let normalizedKey = k;
+            let code = k;
+            
+            if (k.length === 1) {
+                normalizedKey = k.toLowerCase();
+                code = `Key${k.toUpperCase()}`;
+            } else if (k.startsWith('Arrow')) {
+                code = k;
+            }
+
+            const keyEvent = new KeyboardEvent(type, { 
+                key: normalizedKey,
+                code: code,
+                keyCode: getKeyCode(normalizedKey),
+                which: getKeyCode(normalizedKey),
+                bubbles: true,
+                cancelable: true,
+                composed: true
+            });
+
+            try {
+                targetDoc.dispatchEvent(keyEvent);
+                target.dispatchEvent(keyEvent);
+                
+                // Also try dispatching on the body
+                if (targetDoc.body) {
+                    targetDoc.body.dispatchEvent(keyEvent);
+                }
+            } catch(e) {
+                console.log('Key dispatch error:', e);
+            }
+        }
+        
+        function getKeyCode(key) {
+            const keyCodeMap = {
+                'w': 87, 's': 83, 'a': 65, 'd': 68,
+                'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39,
+                'z': 90, 'x': 88,
+                'Escape': 27, 'Space': 32, 'Enter': 13, 'Shift': 16, 'Control': 17, 'Tab': 9,
+                'e': 69, 'r': 82, 'f': 70, 'q': 81, 'c': 67, 'v': 86,
+                '1': 49, '2': 50, '3': 51
+            };
+            return keyCodeMap[key] || 0;
+        }
+        
+        function simulateClick(button, type) {
+            const buttonMap = { left: 0, right: 2 };
+            const buttonCode = buttonMap[button];
+            
+            const event = new MouseEvent(type, { 
+                button: buttonCode,
+                buttons: button === 'left' ? 1 : 2,
+                bubbles: true,
+                cancelable: true
+            });
+            
+            try {
+                const targetDoc = gameFrame.contentWindow ? gameFrame.contentWindow.document : document;
+                targetDoc.dispatchEvent(event);
+            } catch(e) {
+                document.dispatchEvent(event);
+            }
+        }
+        function attachButtonEvents(b) {
+            const k = b.dataset.key;
+            const clickType = b.dataset.click;
+            
+            const down = (e) => {
+                if (dragMode || e.button === 2) return; 
+                e.preventDefault();
+                
+                if (k) {
+                    if (!active.has(k)) {
+                        active.add(k);
+                        b.classList.add('active');
+                        key('keydown', k);
+                    }
+                } else if (clickType) {
+                    if (!clickActive.has(clickType)) {
+                        clickActive.add(clickType);
+                        b.classList.add('active');
+                        simulateClick(clickType, 'mousedown');
+                    }
+                }
+            };
+            
+            const up = (e) => {
+                if (k) {
+                    if (active.has(k)) {
+                        active.delete(k);
+                        b.classList.remove('active');
+                        key('keyup', k);
+                    }
+                } else if (clickType) {
+                    if (clickActive.has(clickType)) {
+                        clickActive.delete(clickType);
+                        b.classList.remove('active');
+                        simulateClick(clickType, 'mouseup');
+                    }
+                }
+            };
+            
+            b.addEventListener('touchstart', down, { passive: false });
+            b.addEventListener('mousedown', down);
+            b.addEventListener('touchend', up, { passive: false });
+            b.addEventListener('touchcancel', up, { passive: false });
+            b.addEventListener('mouseup', up);
+            b.addEventListener('mouseleave', up);
+        }
+        document.querySelectorAll('.btn[data-key]').forEach(attachButtonEvents);
+        document.querySelectorAll('.btn[data-click]').forEach(attachButtonEvents);
+        const joy = document.querySelector('.joy');
+        const stick = document.querySelector('.joy-stick');
+        const camera = document.querySelector('.camera');
+        const cameraStick = document.querySelector('.camera-stick');
+        
+        function handleStickInput(e, stickElement, controlElement, isCamera) {
+            if (dragMode) return;
+            
+            const coords = getCoords(e);
+            const r = controlElement.getBoundingClientRect();
+            const centerX = r.left + r.width / 2;
+            const centerY = r.top + r.height / 2;
+            let dx = coords.x - centerX;
+            let dy = coords.y - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            const stickSize = parseFloat(getComputedStyle(stickElement).width);
+            const maxDist = (r.width / 2) - (stickSize / 2);
+
+            if (dist > maxDist) {
+                dx = (dx / dist) * maxDist;
+                dy = (dy / dist) * maxDist;
+            }
+            
+            stickElement.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            controlElement.classList.add('active');
+
+            if (isCamera) {
+                const moveX = dx / maxDist * cameraSensitivity; 
+                const moveY = dy / maxDist * cameraSensitivity;
+
+                const mouseMoveEvent = new MouseEvent('mousemove', {
+                    movementX: moveX,
+                    movementY: moveY,
+                    bubbles: true,
+                    cancelable: true,
+                    view: gameFrame.contentWindow || window
+                });
+
+                try {
+                    const targetDoc = gameFrame.contentWindow ? gameFrame.contentWindow.document : document;
+                    targetDoc.dispatchEvent(mouseMoveEvent);
+                } catch(err) {}
+
+            } else {
+                const threshold = 16 * baseSize;
+                
+                // Get the correct keys based on joystick mode
+                const keys = joystickMode === 'wasd' 
+                    ? { up: 'w', down: 's', left: 'a', right: 'd' }
+                    : { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+                
+                const keyArray = [
+                    { keyName: keys.up, condition: dy < -threshold },
+                    { keyName: keys.down, condition: dy > threshold },
+                    { keyName: keys.left, condition: dx < -threshold },
+                    { keyName: keys.right, condition: dx > threshold }
+                ];
+                
+                keyArray.forEach(({ keyName, condition }) => {
+                    if (condition && !active.has(keyName)) {
+                        active.add(keyName);
+                        key('keydown', keyName);
+                    } else if (!condition && active.has(keyName)) {
+                        active.delete(keyName);
+                        key('keyup', keyName);
+                    }
+                });
+            }
+        }
+        
+        function resetStick(controlElement, stickElement, isJoystick) {
+            stickElement.style.transform = 'translate(-50%, -50%)';
+            controlElement.classList.remove('active');
+            if (isJoystick) {
+                const keysList = joystickMode === 'wasd' 
+                    ? ['w', 's', 'a', 'd']
+                    : ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+                    
+                keysList.forEach(k => {
+                    if (active.has(k)) {
+                        active.delete(k);
+                        key('keyup', k);
+                    }
+                });
+            }
+            activeInputId = null;
+        }
+        
+        function handleStickStart(e) {
+            if (dragMode || activeInputId !== null) return;
+            activeInputId = e.touches ? e.touches[0].identifier : 'mouse';
+            e.preventDefault();
+        }
+        
+        function handleStickMove(e) {
+            if (dragMode || activeInputId === null) return;
+            
+            let targetEvent = e;
+            if (e.touches) {
+                const touch = Array.from(e.touches).find(t => t.identifier === activeInputId);
+                if (!touch) return;
+                targetEvent = { touches: [touch], target: e.target };
+            }
+            
+            const isJoy = joy.contains(e.target) || joy.classList.contains('active');
+            const isCamera = camera.contains(e.target) || camera.classList.contains('active');
+
+            if (isJoy) {
+                handleStickInput(targetEvent, stick, joy, false);
+            } else if (isCamera) {
+                handleStickInput(targetEvent, cameraStick, camera, true);
+            }
+            e.preventDefault();
+        }
+        
+        function handleStickEnd(e) {
+            if (activeInputId === null) return;
+            
+            let isReleasingActive = false;
+            if (e.changedTouches) {
+                const releasingTouch = Array.from(e.changedTouches).find(t => t.identifier === activeInputId);
+                if (releasingTouch) isReleasingActive = true;
+            } else if (activeInputId === 'mouse') {
+                isReleasingActive = true;
+            }
+
+            if (isReleasingActive) {
+                if (joy.classList.contains('active')) resetStick(joy, stick, true);
+                if (camera.classList.contains('active')) resetStick(camera, cameraStick, false);
+            }
+        }
+        
+        joy.addEventListener('touchstart', handleStickStart, { passive: false });
+        joy.addEventListener('mousedown', handleStickStart);
+        camera.addEventListener('touchstart', handleStickStart, { passive: false });
+        camera.addEventListener('mousedown', handleStickStart);
+        document.addEventListener('touchmove', handleStickMove, { passive: false });
+        document.addEventListener('mousemove', handleStickMove);
+        document.addEventListener('touchend', handleStickEnd);
+        document.addEventListener('touchcancel', handleStickEnd);
+        document.addEventListener('mouseup', handleStickEnd);
+        
+        loadAll();
+    </script>
+</body>
+</html>
