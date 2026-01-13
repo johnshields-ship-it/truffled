@@ -9,7 +9,7 @@ import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server"
 import { toIPv4 } from "./utils.js";
-
+ 
 const analyticsSnippet = `
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-PXHK7Q7G3Z"></script>
 <script>
